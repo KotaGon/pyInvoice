@@ -1,0 +1,4 @@
+1.以下を参考にpythonのインストール
+  https://chatgpt.com/share/684c2870-e558-8000-8d8e-c1c592ac5196
+
+2.batフォルダのinstall.batをクリック
