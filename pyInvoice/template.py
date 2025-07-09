@@ -9,10 +9,10 @@ from openpyxl.worksheet.pagebreak import Break
 from copy import copy
 from datetime import datetime
 from openpyxl.utils.datetime import from_excel
+from openpyxl.drawing.image import Image
 
 import win32com.client
 from pathlib import Path
-
 
 class Cell:
     def __init__(self, row, column, value=""):
@@ -74,18 +74,31 @@ class Template:
         
         new_file_path = os.path.join(self.output_dir, f"output.xlsx")
         relative_path = Path(new_file_path)
-        absolute_path = relative_path.resolve()
+        absolute_path = str(relative_path.resolve())
 
 
         wb = load_workbook(self.base_file_path)
         first_sheet_name = wb.sheetnames[0]  # 先頭のシート名
         ws = wb[first_sheet_name]     
         
+        img = Image('./template/zu.png')
+        img.width = int(5.33 * 96)
+        img.height = int(1.6 * 96)  
+
         # コピー元範囲
         nrow, ncol = self.print_area[0], self.print_area[1]
         start_row = 1
         n_page = sum([math.ceil(len(items)/self.max_row_item) for k, items in ps.items()])
+        # 画像をセルに貼り付ける
+        ws.add_image(img, f"F4")
         for i in range(n_page-1):
+            
+            # 画像をセルに貼り付ける
+            img = Image('./template/zu.png')
+            ws.add_image(img, f"F{4+(i+1)*nrow}")
+            img.width = int(5.33 * 96)
+            img.height = int(1.6 * 96)  
+
             for row in range(start_row, start_row + nrow):  # A1〜H43
                 for col in range(1, ncol+1):  # A〜H
                     source_cell = ws.cell(row=row, column=col)
@@ -176,17 +189,24 @@ class Template:
             logger.info(f"正常終了")
         return 
     
-    def convert_excel_to_pdf_win(excel_path, pdf_path=None):
-        excel = win32com.client.Dispatch("Excel.Application")
-        excel.Visible = False
-        wb = excel.Workbooks.Open(excel_path)
 
-        if not pdf_path:
-            pdf_path = excel_path.replace(".xlsx", ".pdf")
+    def convert_excel_to_pdf_win(self, excel_path, pdf_path=None):
+        try:
+            excel = win32com.client.Dispatch("Excel.Application")
+            excel.Visible = False
+            wb = excel.Workbooks.Open(excel_path)
 
-        wb.ExportAsFixedFormat(0, pdf_path)
-        wb.Close(False)
-        excel.Quit()
+            if not pdf_path:
+                pdf_path = excel_path.replace(".xlsx", ".pdf")
 
-        print(f"✅ PDF変換成功: {pdf_path}")
+            wb.ExportAsFixedFormat(0, pdf_path)
+            
+            print(f"✅ PDF変換成功: {pdf_path}")
+        except :
+            print("pdf 発行エラー ")
+        finally: 
+            if(wb):
+                wb.Close()
+            if(excel):
+                excel.Quit()
         return
